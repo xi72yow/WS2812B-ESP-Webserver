@@ -21,6 +21,7 @@ void connectToNetwork() {
                 delay(500);
                 digitalWrite(LED_BUILTIN, 1);
                 delay(500);
+                i++;
                 if (i > 9) {
                         ESP.restart();
                 }
