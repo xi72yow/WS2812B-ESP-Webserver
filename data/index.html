@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/konva.min.js"></script>
+
+  <style>
+    /*  @font-face {
+      font-family: 'oswald';
+      src: url('Untitled1.ttf');
+    }*/
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: oswald;
+      color: white;
+      text-align: center;
+      overflow: hidden;
+      background-color: #222222;
+      background: repeating-linear-gradient(45deg, #2b2b2b 0%, #2b2b2b 10%, #222222 0%, #222222 50%) 0 / 15px 15px;
+      stroke-width: 3px;
+    }
+
+    .logo {
+      font-size: 5em;
+      stroke-width: 3px;
+
+    }
+
+    .container {}
+  </style>
+
+</head>
+
+<body>
+  <h1>xi72yow.de</h1>
+  <div id="container"></div>
+  <script>
+    /*
+██     ██ ███████ ██████  ███████  ██████   ██████ ██   ██ ███████ ████████
+██     ██ ██      ██   ██ ██      ██    ██ ██      ██  ██  ██         ██
+██  █  ██ █████   ██████  ███████ ██    ██ ██      █████   █████      ██
+██ ███ ██ ██      ██   ██      ██ ██    ██ ██      ██  ██  ██         ██
+███ ███  ███████ ██████  ███████  ██████   ██████ ██   ██ ███████    ██
+*/
+
+    var connection = new WebSocket('ws://' + location.hostname + ':81/', ['arduino']);
+    connection.onopen = function() {
+      connection.send('Connect ' + new Date());
+    };
+    connection.onerror = function(error) {
+      console.log('WebSocket Error ', error);
+    };
+    connection.onmessage = function(e) {
+      console.log('Server: ', e.data);
+    };
+    connection.onclose = function() {
+      console.log('WebSocket connection closed');
+    };
+
+    function send(x) {
+      connection.send(rgbstr);
+    }
+
+    //console.log(RGBtoHSV(rgb)); // eingabe r,g,b alles in absolut und ausgabe h in grad s,v in %
+    //console.log(HSVtoRGB(RGBtoHSV(rgb))); //eingabe h in deg (360), s und v in % ausgabe r,g,b alles in absolut
+
+    /*
+    ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██     ██   ██ ███████ ██    ██ ████████  ██████  ██████   ██████  ██████
+    ██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██     ██   ██ ██      ██    ██    ██    ██    ██ ██   ██ ██       ██   ██
+    █████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██     ███████ ███████ ██    ██    ██    ██    ██ ██████  ██   ███ ██████
+    ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██     ██   ██      ██  ██  ██     ██    ██    ██ ██   ██ ██    ██ ██   ██
+    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████     ██   ██ ███████   ████      ██     ██████  ██   ██  ██████  ██████
+    */
+
+    function HSVtoRGB(hsvRef) {
+      let hsv = {}; //clone all properties into a objekt with new reference
+      for (let key in hsvRef) {
+        hsv[key] = hsvRef[key];
+      }
+      hsv.h = hsv.h / 360;
+      hsv.v = Math.round(hsv.v * 255);
+
+      var i = Math.floor(hsv.h * 6);
+      var f = hsv.h * 6 - i;
+      var p = Math.round(hsv.v * (1 - hsv.s));
+      var q = Math.round(hsv.v * (1 - f * hsv.s));
+      var t = Math.round(hsv.v * (1 - (1 - f) * hsv.s));
+
+      console.log("alive convert 1");
+
+      switch (i % 6) {
+        case 0:
+          return {
+            r: hsv.v, g: t, b: p
+          };
+        case 1:
+          return {
+            r: q, g: hsv.v, b: p
+          };
+        case 2:
+          return {
+            r: p, g: hsv.v, b: t
+          };
+        case 3:
+          return {
+            r: p, g: q, b: hsv.v
+          };
+        case 4:
+          return {
+            r: t, g: p, b: hsv.v
+          };
+        case 5:
+          return {
+            r: hsv.v, g: p, b: q
+          };
+      }
+    }
+
+    /*
+    ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██     ██████   ██████  ██████  ████████  ██████  ██   ██ ███████ ██    ██
+    ██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██     ██   ██ ██       ██   ██    ██    ██    ██ ██   ██ ██      ██    ██
+    █████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██     ██████  ██   ███ ██████     ██    ██    ██ ███████ ███████ ██    ██
+    ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██     ██   ██ ██    ██ ██   ██    ██    ██    ██ ██   ██      ██  ██  ██
+    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████     ██   ██  ██████  ██████     ██     ██████  ██   ██ ███████   ████
+    */
+
+    function RGBtoHSV(rgbRef) {
+
+      let rgb = {}; //clone all properties into a objekt with new reference
+      for (let key in rgbRef) {
+        rgb[key] = rgbRef[key];
+      }
+
+      rgb.r = rgb.r / 255;
+      rgb.g = rgb.g / 255;
+      rgb.b = rgb.b / 255;
+
+      let max = Math.max(rgb.r, rgb.g, rgb.b);
+      let min = Math.min(rgb.r, rgb.g, rgb.b);
+      let h, s, v = max;
+
+      let d = max - min;
+      s = max == 0 ? 0 : d / max;
+
+      if (max == min) {
+        h = 0; // achromatic
+      } else {
+        switch (max) {
+          case rgb.r:
+            h = (rgb.g - rgb.b) / d + (rgb.g < rgb.b ? 6 : 0);
+            break;
+          case rgb.g:
+            h = (rgb.b - rgb.r) / d + 2;
+            break;
+          case rgb.b:
+            h = (rgb.r - rgb.g) / d + 4;
+            break;
+        }
+
+        h = h / 6;
+      }
+
+      console.log("alive convert 2");
+
+      return {
+        h: h * 360,
+        s: s,
+        v: v
+      };
+    }
+
+    /*
+    ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██     ███████ ███████ ████████ ███████ ████████ ██████  ██ ██████  ███████ ██      ██  ██████  ██   ██ ████████ ███    ██ ███████ ███████ ███████
+    ██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██     ██      ██         ██    ██         ██    ██   ██ ██ ██   ██ ██      ██      ██ ██       ██   ██    ██    ████   ██ ██      ██      ██
+    █████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██     ███████ █████      ██    ███████    ██    ██████  ██ ██████  █████   ██      ██ ██   ███ ███████    ██    ██ ██  ██ █████   ███████ ███████
+    ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██          ██ ██         ██         ██    ██    ██   ██ ██ ██      ██      ██      ██ ██    ██ ██   ██    ██    ██  ██ ██ ██           ██      ██
+    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████     ███████ ███████    ██    ███████    ██    ██   ██ ██ ██      ███████ ███████ ██  ██████  ██   ██    ██    ██   ████ ███████ ███████ ███████
+    */
+
+    function setStripeLightness(value) {
+      for (let i = 0; i < stripeData.length; i += 3) {
+        let oldRGB = {
+          r: stripeData[i + 1],
+          g: stripeData[i],
+          b: stripeData[i + 2],
+        };
+        let hsv = RGBtoHSV(oldRGB);
+        hsv.v = value;
+        let newRGB = HSVtoRGB(hsv);
+
+        return newRGB;
+      }
+    }
+    /*
+    ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██     ██████   ██████  ██████  ████████  ██████  ██   ██ ███████ ██   ██
+    ██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██     ██   ██ ██       ██   ██    ██    ██    ██ ██   ██ ██       ██ ██
+    █████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██     ██████  ██   ███ ██████     ██    ██    ██ ███████ █████     ███
+    ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██     ██   ██ ██    ██ ██   ██    ██    ██    ██ ██   ██ ██       ██ ██
+    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████     ██   ██  ██████  ██████     ██     ██████  ██   ██ ███████ ██   ██
+    */
+
+    function componentToHex(c) {
+      let hex = c.toString(16);
+      return hex.length == 1 ? "0" + hex : hex;
+    }
+
+    function rgbToHex(r, g, b) {
+      return componentToHex(r) + componentToHex(g) + componentToHex(b);
+    }
+
+    /*
+    ██   ██  ██████  ███    ██ ██    ██  █████
+    ██  ██  ██    ██ ████   ██ ██    ██ ██   ██
+    █████   ██    ██ ██ ██  ██ ██    ██ ███████
+    ██  ██  ██    ██ ██  ██ ██  ██  ██  ██   ██
+    ██   ██  ██████  ██   ████   ████   ██   ██
+    */
+
+    console.log("Hallo");
+
+    let width = window.innerWidth;
+    let height = window.innerHeight - 200;
+
+    let slideWidth = width * 0.8;
+    let slideHight = height * 0.15;
+    let slideXpos = width * 0.1;
+    let slideYpos = height - (height * 0.3);
+    let slideWidthDrag = slideWidth * 0.03;
+    let slideHightDrag = slideHight * 1.35;
+
+    console.log("Width " + width);
+    console.log("Height " + height);
+
+    let stage = new Konva.Stage({
+      container: 'container',
+      width: width,
+      height: height
+    });
+
+    function getPointerOnElement(element) {
+      let pos = element.getPointerPosition();
+      return pos;
+    }
+
+    let layer = new Konva.Layer();
+
+    let colorRect = new Konva.Rect({
+      x: slideXpos,
+      y: slideYpos,
+      width: slideWidth,
+      height: slideHight,
+      fillLinearGradientStartPoint: {
+        x: 0
+      },
+      fillLinearGradientEndPoint: {
+        x: slideWidth
+      },
+      fillLinearGradientColorStops: [0, '#FF0000', 0.1666, '#FFFF00', 2 * 0.1666, '#00FF00', 3 * 0.1666, '#00FFFF', 4 * 0.1666, '#0000FF', 5 * 0.1666, '#FF00FF', 6 * 0.1666, '#FF0000'],
+      stroke: 'black',
+      strokeWidth: 4,
+    });
+
+    let colorRectSlide = new Konva.Rect({
+      x: slideXpos - (slideWidthDrag / 2),
+      y: slideYpos,
+      width: slideWidthDrag,
+      height: slideHightDrag,
+      stroke: 'white',
+      draggable: true,
+      dragBoundFunc: function(pos) {
+        let newX = new Number();
+        if (pos.x <= colorRect.absolutePosition().x - (slideWidthDrag / 2)) {
+          newX = colorRect.absolutePosition().x - (slideWidthDrag / 2);
+        } else if (pos.x >= colorRect.absolutePosition().x + slideWidth - (slideWidthDrag / 2)) {
+          newX = colorRect.absolutePosition().x + slideWidth - (slideWidthDrag / 2);
+        } else {
+          newX = pos.x
+        }
+        return {
+          x: newX,
+          y: slideYpos,
+        };
+      },
+      strokeWidth: 4,
+    });
+
+    function ZahlToRGB() {
+
+      let sixtyDegreeLenght = slideWidth / 6;
+      let oneChannelColorLenght = sixtyDegreeLenght / 255;
+      let Farbzahl = colorRectSlide.absolutePosition().x + (slideWidthDrag / 2) - slideXpos;
+
+      let Rot = 255;
+      let Grun = 0;
+      let Blau = 0;
+
+      while (Grun < 255 && Farbzahl >= 0) {
+        Rot = 255;
+        Grun++;
+        Blau = 0;
+        Farbzahl = Farbzahl - oneChannelColorLenght;
+
+        if (Farbzahl <= 0) break;
+      }
+
+      while (Rot > 0 && Farbzahl >= 0) {
+        Rot--;
+        Blau = 0;
+        Grun = 255;
+        Farbzahl = Farbzahl - oneChannelColorLenght;
+
+        if (Farbzahl <= 0) break;
+      }
+
+      while (Blau < 255 && Farbzahl >= 0) {
+        Grun = 255;
+        Blau++;
+        Rot = 0;
+        Farbzahl = Farbzahl - oneChannelColorLenght;
+
+        if (Farbzahl <= 0) break;
+      }
+
+      while (Grun > 0 && Farbzahl >= 0) {
+        Rot = 0;
+        Grun--;
+        Blau = 255;
+        Farbzahl = Farbzahl - oneChannelColorLenght;
+
+        if (Farbzahl <= 0) break;
+      }
+
+      while (Rot < 255 && Farbzahl >= 0) {
+        Rot++;
+        Blau = 255;
+        Grun = 0;
+        Farbzahl = Farbzahl - oneChannelColorLenght;
+
+        if (Farbzahl <= 0) break;
+      }
+      while (Blau > 0 && Farbzahl >= 0) {
+        Grun = 0;
+        Blau--;
+        Rot = 255;
+        Farbzahl = Farbzahl - oneChannelColorLenght;
+
+        if (Farbzahl <= 0) break;
+      }
+
+      return {
+        r: Rot,
+        g: Grun,
+        b: Blau
+      };
+
+    }
+
+    colorRectSlide.on('dragmove', function() {
+      let RGB = ZahlToRGB();
+      colorRectSlide.setAttr('stroke', "#" + rgbToHex(RGB.r, RGB.g, RGB.b));
+      connection.send(rgbToHex(RGB.r, RGB.g, RGB.b));
+    });
+
+    layer.add(colorRect);
+    layer.add(colorRectSlide);
+    stage.add(layer);
+  </script>
+
+
+</body>
+
+</html>
