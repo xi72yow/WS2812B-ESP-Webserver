@@ -12,6 +12,7 @@
 #define BRIGHTNESS 50
 #define CHIPSET     WS2812B
 #define COLOR_ORDER GRB
+#define DEBUG
 
 Adafruit_NeoPixel strip(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
@@ -80,6 +81,7 @@ String getContentType(String filename){
         else if(filename.endsWith(F(".pdf"))) return F("application/x-pdf");
         else if(filename.endsWith(F(".zip"))) return F("application/x-zip");
         else if(filename.endsWith(F(".gz"))) return F("application/x-gzip");
+        else if(filename.endsWith(F(".ttf"))) return F("font/ttf");
         return F("text/plain");
 }
 
@@ -152,22 +154,49 @@ void setStripeColor(int r, int g, int b){
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght) {
         switch (type) {
-        case WStype_DISCONNECTED:
+
+        case WStype_DISCONNECTED: {
+          #ifdef DEBUG
                 Serial.printf("[%u] Disconnected!\n", num);
+          #endif
                 break;
-        case WStype_CONNECTED: {
-                IPAddress ip = webSocket.remoteIP(num);
-                Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
         }
-        break;
-        case WStype_TEXT:
-                Serial.printf("[%u] get Text: %s\n", num, payload);
-                unsigned char r[]={payload[0],payload[1]};
-                unsigned char g[]={payload[2],payload[3]};
-                unsigned char b[]={payload[4],payload[5]};
-                setStripeColor(hex2int(r),hex2int(g),hex2int(b));
-                Serial.printf("get R value: %i get G value: %i get B value: %i\n", hex2int(r), hex2int(g), hex2int(b));
+
+        case WStype_CONNECTED: {
+          IPAddress ip = webSocket.remoteIP(num);
+          #ifdef DEBUG
+                Serial.printf("[%u] Connected from %d.%d.%d.%d url: %s\n", num, ip[0], ip[1], ip[2], ip[3], payload);
+          #endif
                 break;
+        }
+
+        case WStype_TEXT: {
+          #ifdef DEBUG
+                Serial.printf("[%u] get Text: %s\n", num, payload);
+                int z = (int)(payload[0]);
+                Serial.printf("%d\n", z);
+          #endif
+
+                switch ((int)(payload[0])) {
+                case 67: {
+                        break;
+                }
+                case 35: {
+                        unsigned char r[]={payload[1],payload[2]};
+                        unsigned char g[]={payload[3],payload[4]};
+                        unsigned char b[]={payload[5],payload[6]};
+                        setStripeColor(hex2int(r),hex2int(g),hex2int(b));
+
+                        #ifdef DEBUG
+                        Serial.printf("get R value: %i get G value: %i get B value: %i\n", hex2int(r), hex2int(g), hex2int(b));
+                        #endif
+
+                        break;
+                }
+
+                }
+        }
+
         }
 }
 

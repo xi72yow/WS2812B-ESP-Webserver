@@ -6,49 +6,41 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="/konva.min.js"></script>
+  <title>LED Control</title>
 
   <style>
-    /*  @font-face {
+    @font-face {
       font-family: 'oswald';
-      src: url('Untitled1.ttf');
-    }*/
+      src: url('/Untitled1.ttf');
+    }
 
     body {
-      margin: 0;
-      padding: 0;
-      font-family: oswald;
-      color: white;
-      text-align: center;
       overflow: hidden;
+      font-family: oswald;
       background-color: #222222;
       background: repeating-linear-gradient(45deg, #2b2b2b 0%, #2b2b2b 10%, #222222 0%, #222222 50%) 0 / 15px 15px;
-      stroke-width: 3px;
     }
-
-    .logo {
-      font-size: 5em;
-      stroke-width: 3px;
-
-    }
-
-    .container {}
   </style>
 
 </head>
 
 <body>
-  <h1>xi72yow.de</h1>
-  <div id="container"></div>
+
+  <div id="stage-parent">
+    <div id="container"></div>
+  </div>
+
   <script>
     /*
-██     ██ ███████ ██████  ███████  ██████   ██████ ██   ██ ███████ ████████
-██     ██ ██      ██   ██ ██      ██    ██ ██      ██  ██  ██         ██
-██  █  ██ █████   ██████  ███████ ██    ██ ██      █████   █████      ██
-██ ███ ██ ██      ██   ██      ██ ██    ██ ██      ██  ██  ██         ██
-███ ███  ███████ ██████  ███████  ██████   ██████ ██   ██ ███████    ██
-*/
-
-    var connection = new WebSocket('ws://' + location.hostname + ':81/', ['arduino']);
+    ██     ██ ███████ ██████  ███████  ██████   ██████ ██   ██ ███████ ████████
+    ██     ██ ██      ██   ██ ██      ██    ██ ██      ██  ██  ██         ██
+    ██  █  ██ █████   ██████  ███████ ██    ██ ██      █████   █████      ██
+    ██ ███ ██ ██      ██   ██      ██ ██    ██ ██      ██  ██  ██         ██
+    ███ ███  ███████ ██████  ███████  ██████   ██████ ██   ██ ███████    ██
+    */
+    let sendStuff;
+    let connection = new WebSocket('ws://' + location.hostname + ':81/', ['arduino']);
+    
     connection.onopen = function() {
       connection.send('Connect ' + new Date());
     };
@@ -63,11 +55,13 @@
     };
 
     function send(x) {
-      connection.send(rgbstr);
+      connection.send(x);
     }
 
+
+
     //console.log(RGBtoHSV(rgb)); // eingabe r,g,b alles in absolut und ausgabe h in grad s,v in %
-    //console.log(HSVtoRGB(RGBtoHSV(rgb))); //eingabe h in deg (360), s und v in % ausgabe r,g,b alles in absolut
+    //console.log(HSVtoRGB(RGBtoHSV(rgb))); //eingabe h in deg (360), s und v in % ausgabe r,g,b alles in absolut*/
 
     /*
     ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██     ██   ██ ███████ ██    ██ ████████  ██████  ██████   ██████  ██████
@@ -82,6 +76,15 @@
       for (let key in hsvRef) {
         hsv[key] = hsvRef[key];
       }
+      if (hsv.h <= 0) {
+        hsv.h = 0;
+      }
+      if (hsv.s <= 0) {
+        hsv.s = 0;
+      }
+      if (hsv.v <= 0) {
+        hsv.v = 0;
+      }
       hsv.h = hsv.h / 360;
       hsv.v = Math.round(hsv.v * 255);
 
@@ -90,8 +93,6 @@
       var p = Math.round(hsv.v * (1 - hsv.s));
       var q = Math.round(hsv.v * (1 - f * hsv.s));
       var t = Math.round(hsv.v * (1 - (1 - f) * hsv.s));
-
-      console.log("alive convert 1");
 
       switch (i % 6) {
         case 0:
@@ -165,8 +166,6 @@
         h = h / 6;
       }
 
-      console.log("alive convert 2");
-
       return {
         h: h * 360,
         s: s,
@@ -182,19 +181,19 @@
     ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████     ███████ ███████    ██    ███████    ██    ██   ██ ██ ██      ███████ ███████ ██  ██████  ██   ██    ██    ██   ████ ███████ ███████ ███████
     */
 
-    function setStripeLightness(value) {
-      for (let i = 0; i < stripeData.length; i += 3) {
-        let oldRGB = {
-          r: stripeData[i + 1],
-          g: stripeData[i],
-          b: stripeData[i + 2],
-        };
-        let hsv = RGBtoHSV(oldRGB);
-        hsv.v = value;
-        let newRGB = HSVtoRGB(hsv);
+    function setStripeLightness(value, rgbRef) {
 
-        return newRGB;
+      let rgb = {}; //clone all properties into a objekt with new reference
+      for (let key in rgbRef) {
+        rgb[key] = rgbRef[key];
       }
+
+      let hsv = RGBtoHSV(rgb);
+      hsv.v = value;
+      let newRGB = HSVtoRGB(hsv);
+
+      return newRGB;
+
     }
     /*
     ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██     ██████   ██████  ██████  ████████  ██████  ██   ██ ███████ ██   ██
@@ -209,8 +208,25 @@
       return hex.length == 1 ? "0" + hex : hex;
     }
 
-    function rgbToHex(r, g, b) {
-      return componentToHex(r) + componentToHex(g) + componentToHex(b);
+    function rgbToHex(rgbRef) {
+      let rgb = {}; //clone all properties into a objekt with new reference
+      for (let key in rgbRef) {
+        rgb[key] = rgbRef[key];
+      }
+      return componentToHex(rgb.r) + componentToHex(rgb.g) + componentToHex(rgb.b);
+    }
+
+    /*
+    ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██      ██████  ███████ ████████ ██████   ██████  ██ ███    ██ ████████ ███████ ██████   ██████  ███    ██ ███████ ██      ███████ ███    ███ ███████ ███    ██ ████████
+    ██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██     ██       ██         ██    ██   ██ ██    ██ ██ ████   ██    ██    ██      ██   ██ ██    ██ ████   ██ ██      ██      ██      ████  ████ ██      ████   ██    ██
+    █████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██     ██   ███ █████      ██    ██████  ██    ██ ██ ██ ██  ██    ██    █████   ██████  ██    ██ ██ ██  ██ █████   ██      █████   ██ ████ ██ █████   ██ ██  ██    ██
+    ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██     ██    ██ ██         ██    ██      ██    ██ ██ ██  ██ ██    ██    ██      ██   ██ ██    ██ ██  ██ ██ ██      ██      ██      ██  ██  ██ ██      ██  ██ ██    ██
+    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████      ██████  ███████    ██    ██       ██████  ██ ██   ████    ██    ███████ ██   ██  ██████  ██   ████ ███████ ███████ ███████ ██      ██ ███████ ██   ████    ██
+    */
+
+    function getPointerOnElement(element) {
+      let pos = element.getPointerPosition();
+      return pos;
     }
 
     /*
@@ -223,15 +239,18 @@
 
     console.log("Hallo");
 
-    let width = window.innerWidth;
-    let height = window.innerHeight - 200;
+    let setHSV = {
+      h: 0,
+      s: 1,
+      v: 0.5
+    }
 
-    let slideWidth = width * 0.8;
-    let slideHight = height * 0.15;
-    let slideXpos = width * 0.1;
-    let slideYpos = height - (height * 0.3);
-    let slideWidthDrag = slideWidth * 0.03;
-    let slideHightDrag = slideHight * 1.35;
+    let width = window.innerWidth ||
+      document.documentElement.clientWidth ||
+      document.body.clientWidth;
+    let height = window.innerHeight ||
+      document.documentElement.clientHeight ||
+      document.body.clientHeight;
 
     console.log("Width " + width);
     console.log("Height " + height);
@@ -242,133 +261,317 @@
       height: height
     });
 
-    function getPointerOnElement(element) {
-      let pos = element.getPointerPosition();
-      return pos;
+    let slideWidthHue, slideHightHue, slideXposHue, slideYposHue, slideXposValue, slideYposValue, slideWidthHueDrag, slideHightHueDrag;
+
+    let hueColorSteps = []
+
+    function reSetGlobals() {
+      slideWidthHue = stage.width() * 0.8;
+      slideHightHue = stage.height() * 0.1;
+
+      slideXposHue = stage.width() * 0.1;
+      slideYposHue = stage.height() - (stage.height() * 0.07 + slideHightHue);
+
+      slideXposValue = stage.width() * 0.1;
+      slideYposValue = slideYposHue - (stage.height() * 0.07 + slideHightHue);
+
+      slideWidthHueDrag = slideWidthHue * 0.03;
+      slideHightHueDrag = slideHightHue * 1.35;
     }
+
+    reSetGlobals();
 
     let layer = new Konva.Layer();
 
+    let headline = new Konva.Text({
+      width: stage.width(),
+      align: 'center',
+      x: 10,
+      y: 15,
+      text: 'xi72yow.de',
+      fontSize: height * 0.09,
+      fontFamily: 'oswald',
+      shadowColor: 'black',
+      shadowBlur: height * 0.07,
+      fill: "#" + rgbToHex(HSVtoRGB({
+        h: 360,
+        s: 1,
+        v: setHSV.v
+      }))
+    });
+
     let colorRect = new Konva.Rect({
-      x: slideXpos,
-      y: slideYpos,
-      width: slideWidth,
-      height: slideHight,
+      x: slideXposHue,
+      y: slideYposHue,
+      width: slideWidthHue,
+      height: slideHightHue,
       fillLinearGradientStartPoint: {
         x: 0
       },
       fillLinearGradientEndPoint: {
-        x: slideWidth
+        x: slideWidthHue
       },
-      fillLinearGradientColorStops: [0, '#FF0000', 0.1666, '#FFFF00', 2 * 0.1666, '#00FF00', 3 * 0.1666, '#00FFFF', 4 * 0.1666, '#0000FF', 5 * 0.1666, '#FF00FF', 6 * 0.1666, '#FF0000'],
+      fillLinearGradientColorStops: [0, "#" + rgbToHex(HSVtoRGB({
+        h: 0,
+        s: 1,
+        v: setHSV.v
+      })), 0.1666, "#" + rgbToHex(HSVtoRGB({
+        h: 60,
+        s: 1,
+        v: setHSV.v
+      })), 2 * 0.1666, "#" + rgbToHex(HSVtoRGB({
+        h: 120,
+        s: 1,
+        v: setHSV.v
+      })), 3 * 0.1666, "#" + rgbToHex(HSVtoRGB({
+        h: 180,
+        s: 1,
+        v: setHSV.v
+      })), 4 * 0.1666, "#" + rgbToHex(HSVtoRGB({
+        h: 240,
+        s: 1,
+        v: setHSV.v
+      })), 5 * 0.1666, "#" + rgbToHex(HSVtoRGB({
+        h: 300,
+        s: 1,
+        v: setHSV.v
+      })), 6 * 0.1666, "#" + rgbToHex(HSVtoRGB({
+        h: 360,
+        s: 1,
+        v: setHSV.v
+      }))],
       stroke: 'black',
       strokeWidth: 4,
     });
 
     let colorRectSlide = new Konva.Rect({
-      x: slideXpos - (slideWidthDrag / 2),
-      y: slideYpos,
-      width: slideWidthDrag,
-      height: slideHightDrag,
-      stroke: 'white',
+      x: slideXposHue - (slideWidthHueDrag / 2),
+      y: slideYposHue,
+      width: slideWidthHueDrag,
+      height: slideHightHueDrag,
+      stroke: 'black',
       draggable: true,
       dragBoundFunc: function(pos) {
         let newX = new Number();
-        if (pos.x <= colorRect.absolutePosition().x - (slideWidthDrag / 2)) {
-          newX = colorRect.absolutePosition().x - (slideWidthDrag / 2);
-        } else if (pos.x >= colorRect.absolutePosition().x + slideWidth - (slideWidthDrag / 2)) {
-          newX = colorRect.absolutePosition().x + slideWidth - (slideWidthDrag / 2);
+        if (pos.x <= colorRect.absolutePosition().x - (slideWidthHueDrag / 2)) {
+          newX = colorRect.absolutePosition().x - (slideWidthHueDrag / 2);
+        } else if (pos.x >= colorRect.absolutePosition().x + slideWidthHue - (slideWidthHueDrag / 2)) {
+          newX = colorRect.absolutePosition().x + slideWidthHue - (slideWidthHueDrag / 2);
         } else {
           newX = pos.x
         }
         return {
           x: newX,
-          y: slideYpos,
+          y: slideYposHue,
         };
       },
       strokeWidth: 4,
     });
 
-    function ZahlToRGB() {
+    let valueRect = new Konva.Rect({
+      x: slideXposValue,
+      y: slideYposValue,
+      width: slideWidthHue,
+      height: slideHightHue,
+      fillLinearGradientStartPoint: {
+        x: 0
+      },
+      fillLinearGradientEndPoint: {
+        x: slideWidthHue
+      },
+      fillLinearGradientColorStops: [0, '#000000', 1, '#FF0000'],
+      stroke: 'black',
+      strokeWidth: 4,
+    });
 
-      let sixtyDegreeLenght = slideWidth / 6;
-      let oneChannelColorLenght = sixtyDegreeLenght / 255;
-      let Farbzahl = colorRectSlide.absolutePosition().x + (slideWidthDrag / 2) - slideXpos;
+    let valueRectSlide = new Konva.Rect({
+      x: slideXposValue - (slideWidthHueDrag / 2) + 0.5 * slideWidthHue,
+      y: slideYposValue,
+      width: slideWidthHueDrag,
+      height: slideHightHueDrag,
+      stroke: 'black',
+      draggable: true,
+      dragBoundFunc: function(pos) {
+        let newX = new Number();
+        if (pos.x <= valueRect.absolutePosition().x - (slideWidthHueDrag / 2)) {
+          newX = valueRect.absolutePosition().x - (slideWidthHueDrag / 2);
+        } else if (pos.x >= valueRect.absolutePosition().x + slideWidthHue - (slideWidthHueDrag / 2)) {
+          newX = valueRect.absolutePosition().x + slideWidthHue - (slideWidthHueDrag / 2);
+        } else {
+          newX = pos.x
+        }
+        return {
+          x: newX,
+          y: slideYposValue,
+        };
+      },
+      strokeWidth: 4,
+    });
 
-      let Rot = 255;
-      let Grun = 0;
-      let Blau = 0;
+    /*
+    ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██     ███████ ██      ██ ██████  ███████ ████████  ██████  ██   ██ ██    ██ ███████
+    ██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██     ██      ██      ██ ██   ██ ██         ██    ██    ██ ██   ██ ██    ██ ██
+    █████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██     ███████ ██      ██ ██   ██ █████      ██    ██    ██ ███████ ██    ██ █████
+    ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██          ██ ██      ██ ██   ██ ██         ██    ██    ██ ██   ██ ██    ██ ██
+    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████     ███████ ███████ ██ ██████  ███████    ██     ██████  ██   ██  ██████  ███████
+    */
 
-      while (Grun < 255 && Farbzahl >= 0) {
-        Rot = 255;
-        Grun++;
-        Blau = 0;
-        Farbzahl = Farbzahl - oneChannelColorLenght;
-
-        if (Farbzahl <= 0) break;
-      }
-
-      while (Rot > 0 && Farbzahl >= 0) {
-        Rot--;
-        Blau = 0;
-        Grun = 255;
-        Farbzahl = Farbzahl - oneChannelColorLenght;
-
-        if (Farbzahl <= 0) break;
-      }
-
-      while (Blau < 255 && Farbzahl >= 0) {
-        Grun = 255;
-        Blau++;
-        Rot = 0;
-        Farbzahl = Farbzahl - oneChannelColorLenght;
-
-        if (Farbzahl <= 0) break;
-      }
-
-      while (Grun > 0 && Farbzahl >= 0) {
-        Rot = 0;
-        Grun--;
-        Blau = 255;
-        Farbzahl = Farbzahl - oneChannelColorLenght;
-
-        if (Farbzahl <= 0) break;
-      }
-
-      while (Rot < 255 && Farbzahl >= 0) {
-        Rot++;
-        Blau = 255;
-        Grun = 0;
-        Farbzahl = Farbzahl - oneChannelColorLenght;
-
-        if (Farbzahl <= 0) break;
-      }
-      while (Blau > 0 && Farbzahl >= 0) {
-        Grun = 0;
-        Blau--;
-        Rot = 255;
-        Farbzahl = Farbzahl - oneChannelColorLenght;
-
-        if (Farbzahl <= 0) break;
-      }
-
-      return {
-        r: Rot,
-        g: Grun,
-        b: Blau
-      };
-
+    function slideToHue() {
+      let colornum = colorRectSlide.absolutePosition().x + (slideWidthHueDrag / 2) - slideXposHue;
+      let hue = colornum / slideWidthHue * 360;
+      return hue;
     }
 
+    function slideToValue() {
+      let colornum = valueRectSlide.absolutePosition().x + (slideWidthHueDrag / 2) - slideXposValue;
+      let value = colornum / slideWidthHue;
+      return value;
+    }
+
+    /*
+    ███████ ██    ██ ███████ ███    ██ ████████     ██   ██  █████  ███    ██ ██████  ██      ██ ███    ██  ██████
+    ██      ██    ██ ██      ████   ██    ██        ██   ██ ██   ██ ████   ██ ██   ██ ██      ██ ████   ██ ██
+    █████   ██    ██ █████   ██ ██  ██    ██        ███████ ███████ ██ ██  ██ ██   ██ ██      ██ ██ ██  ██ ██   ███
+    ██       ██  ██  ██      ██  ██ ██    ██        ██   ██ ██   ██ ██  ██ ██ ██   ██ ██      ██ ██  ██ ██ ██    ██
+    ███████   ████   ███████ ██   ████    ██        ██   ██ ██   ██ ██   ████ ██████  ███████ ██ ██   ████  ██████
+    */
+
     colorRectSlide.on('dragmove', function() {
-      let RGB = ZahlToRGB();
-      colorRectSlide.setAttr('stroke', "#" + rgbToHex(RGB.r, RGB.g, RGB.b));
-      connection.send(rgbToHex(RGB.r, RGB.g, RGB.b));
+      setHSV.h = slideToHue();
+      let RGB = HSVtoRGB(setHSV);
+      headline.setAttr('shadowColor', "#" + rgbToHex(RGB));
+      headline.setAttr('fill', "#" + rgbToHex(RGB));
+
+      valueRect.setAttrs({
+        fillLinearGradientColorStops: [0, 'black', 1, "#" + rgbToHex(HSVtoRGB({
+          h: setHSV.h,
+          s: 1,
+          v: 1
+        }))],
+      });
+
+      layer.batchDraw();
+
     });
+
+    colorRectSlide.on('dragstart', function() {
+      console.log("dragstart");
+      sendStuff = setInterval(function() {
+      send("#" + rgbToHex(HSVtoRGB(setHSV)));
+    }, 50);
+    });
+
+    colorRectSlide.on('dragend', function() {
+      console.log("dragend");
+      clearInterval(sendStuff);
+    });
+
+    valueRectSlide.on('dragmove', function() {
+      setHSV.v = slideToValue();
+      let RGB = HSVtoRGB(setHSV);
+      headline.setAttr('shadowColor', "#" + rgbToHex(RGB));
+      headline.setAttr('fill', "#" + rgbToHex(RGB));
+
+      colorRect.setAttrs({
+        fillLinearGradientColorStops: [0, "#" + rgbToHex(HSVtoRGB({
+          h: 0,
+          s: 1,
+          v: setHSV.v
+        })), 0.1666, "#" + rgbToHex(HSVtoRGB({
+          h: 60,
+          s: 1,
+          v: setHSV.v
+        })), 2 * 0.1666, "#" + rgbToHex(HSVtoRGB({
+          h: 120,
+          s: 1,
+          v: setHSV.v
+        })), 3 * 0.1666, "#" + rgbToHex(HSVtoRGB({
+          h: 180,
+          s: 1,
+          v: setHSV.v
+        })), 4 * 0.1666, "#" + rgbToHex(HSVtoRGB({
+          h: 240,
+          s: 1,
+          v: setHSV.v
+        })), 5 * 0.1666, "#" + rgbToHex(HSVtoRGB({
+          h: 300,
+          s: 1,
+          v: setHSV.v
+        })), 6 * 0.1666, "#" + rgbToHex(HSVtoRGB({
+          h: 360,
+          s: 1,
+          v: setHSV.v
+        }))]
+      });
+
+      layer.batchDraw();
+
+    });
+
+    valueRectSlide.on('dragstart', function() {
+      console.log("dragstart");
+      sendStuff = setInterval(function() {
+      send("#" + rgbToHex(HSVtoRGB(setHSV)));
+    }, 50);
+
+    });
+
+    valueRectSlide.on('dragend', function() {
+      console.log("dragend");
+      clearInterval(sendStuff);
+
+    });
+
+    /*
+     ██████  █████  ███    ██ ██    ██  █████  ███████     ██       █████  ██    ██ ███████ ██████  ██ ███    ██  ██████
+    ██      ██   ██ ████   ██ ██    ██ ██   ██ ██          ██      ██   ██  ██  ██  ██      ██   ██ ██ ████   ██ ██
+    ██      ███████ ██ ██  ██ ██    ██ ███████ ███████     ██      ███████   ████   █████   ██████  ██ ██ ██  ██ ██   ███
+    ██      ██   ██ ██  ██ ██  ██  ██  ██   ██      ██     ██      ██   ██    ██    ██      ██   ██ ██ ██  ██ ██ ██    ██
+     ██████ ██   ██ ██   ████   ████   ██   ██ ███████     ███████ ██   ██    ██    ███████ ██   ██ ██ ██   ████  ██████
+    */
 
     layer.add(colorRect);
     layer.add(colorRectSlide);
+    layer.add(valueRect);
+    layer.add(valueRectSlide);
+    layer.add(headline);
     stage.add(layer);
+
+    setTimeout(function() {
+      layer.draw();
+      stage.draw();
+    }, 200);
+
+    /*
+    ██████  ███████ ███████ ██ ███████ ███████     ███████ ████████  █████   ██████  ███████
+    ██   ██ ██         ███  ██    ███  ██          ██         ██    ██   ██ ██       ██
+    ██████  █████     ███   ██   ███   █████       ███████    ██    ███████ ██   ███ █████
+    ██   ██ ██       ███    ██  ███    ██               ██    ██    ██   ██ ██    ██ ██
+    ██   ██ ███████ ███████ ██ ███████ ███████     ███████    ██    ██   ██  ██████  ███████
+    */
+
+    function fitStageIntoParentContainer() {
+      let container = document.querySelector('#stage-parent');
+      let containerWidth = container.offsetWidth;
+      let containerHeight = container.offsetHeight;
+      let scale = containerWidth / width;
+      if (scale > 1) {
+        return;
+      } else {
+        stage.width(width * scale);
+        headline.width(width * scale);
+        stage.height(height * scale);
+        stage.scale({
+          x: scale,
+          y: scale
+        });
+        reSetGlobals();
+        stage.batchDraw();
+      }
+    }
+
+    fitStageIntoParentContainer();
+    window.addEventListener('resize', fitStageIntoParentContainer);
   </script>
 
 
