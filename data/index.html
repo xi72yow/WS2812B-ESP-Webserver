@@ -5,13 +5,13 @@
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="/konva.min.js"></script>
+  <script src="konva.min.js"></script>
   <title>LED Control</title>
 
   <style>
     @font-face {
       font-family: 'oswald';
-      src: url('/Untitled1.ttf');
+      src: url('Untitled1.ttf');
     }
 
     body {
@@ -38,9 +38,19 @@
     ██ ███ ██ ██      ██   ██      ██ ██    ██ ██      ██  ██  ██         ██
     ███ ███  ███████ ██████  ███████  ██████   ██████ ██   ██ ███████    ██
     */
+
     let sendStuff;
-    let connection = new WebSocket('ws://' + location.hostname + ':81/', ['arduino']);
-    
+    let socket;
+    let connection;
+
+    if (window.hasOwnProperty("WebSocket")) {
+      connection = new WebSocket('ws://' + location.hostname + ':81/', ['arduino']);
+    } else if (window.hasOwnProperty("MozWebSocket")) {
+      connection = new MozWebSocket('ws://' + location.hostname + ':81/', ['arduino']);
+    } else {
+      alert("Your browser doesn't support WebSocket.");
+    }
+
     connection.onopen = function() {
       connection.send('Connect ' + new Date());
     };
@@ -57,8 +67,6 @@
     function send(x) {
       connection.send(x);
     }
-
-
 
     //console.log(RGBtoHSV(rgb)); // eingabe r,g,b alles in absolut und ausgabe h in grad s,v in %
     //console.log(HSVtoRGB(RGBtoHSV(rgb))); //eingabe h in deg (360), s und v in % ausgabe r,g,b alles in absolut*/
@@ -421,6 +429,14 @@
       let hue = colornum / slideWidthHue * 360;
       return hue;
     }
+    
+    /*
+    ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██     ███████ ██      ██ ██████  ███████ ████████  ██████  ██    ██  █████  ██      ██    ██ ███████
+    ██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██     ██      ██      ██ ██   ██ ██         ██    ██    ██ ██    ██ ██   ██ ██      ██    ██ ██
+    █████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██     ███████ ██      ██ ██   ██ █████      ██    ██    ██ ██    ██ ███████ ██      ██    ██ █████
+    ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██          ██ ██      ██ ██   ██ ██         ██    ██    ██  ██  ██  ██   ██ ██      ██    ██ ██
+    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████     ███████ ███████ ██ ██████  ███████    ██     ██████    ████   ██   ██ ███████  ██████  ███████
+    */
 
     function slideToValue() {
       let colornum = valueRectSlide.absolutePosition().x + (slideWidthHueDrag / 2) - slideXposValue;
@@ -452,18 +468,6 @@
 
       layer.batchDraw();
 
-    });
-
-    colorRectSlide.on('dragstart', function() {
-      console.log("dragstart");
-      sendStuff = setInterval(function() {
-      send("#" + rgbToHex(HSVtoRGB(setHSV)));
-    }, 50);
-    });
-
-    colorRectSlide.on('dragend', function() {
-      console.log("dragend");
-      clearInterval(sendStuff);
     });
 
     valueRectSlide.on('dragmove', function() {
@@ -508,27 +512,37 @@
 
     });
 
-    valueRectSlide.on('dragstart', function() {
-      console.log("dragstart");
-      sendStuff = setInterval(function() {
-      send("#" + rgbToHex(HSVtoRGB(setHSV)));
-    }, 50);
+        colorRectSlide.on('dragstart', function() {
+          console.log("dragstart");
+          sendStuff = setInterval(function() {
+          send("#" + rgbToHex(HSVtoRGB(setHSV)));
+        }, 50);
+        });
 
-    });
+        colorRectSlide.on('dragend', function() {
+          console.log("dragend");
+          clearInterval(sendStuff);
+        });
 
-    valueRectSlide.on('dragend', function() {
-      console.log("dragend");
-      clearInterval(sendStuff);
+        valueRectSlide.on('dragstart', function() {
+          console.log("dragstart");
+          sendStuff = setInterval(function() {
+          send("#" + rgbToHex(HSVtoRGB(setHSV)));
+        }, 50);
+        });
 
-    });
+        valueRectSlide.on('dragend', function() {
+          console.log("dragend");
+          clearInterval(sendStuff);
+        });
 
-    /*
-     ██████  █████  ███    ██ ██    ██  █████  ███████     ██       █████  ██    ██ ███████ ██████  ██ ███    ██  ██████
-    ██      ██   ██ ████   ██ ██    ██ ██   ██ ██          ██      ██   ██  ██  ██  ██      ██   ██ ██ ████   ██ ██
-    ██      ███████ ██ ██  ██ ██    ██ ███████ ███████     ██      ███████   ████   █████   ██████  ██ ██ ██  ██ ██   ███
-    ██      ██   ██ ██  ██ ██  ██  ██  ██   ██      ██     ██      ██   ██    ██    ██      ██   ██ ██ ██  ██ ██ ██    ██
-     ██████ ██   ██ ██   ████   ████   ██   ██ ███████     ███████ ██   ██    ██    ███████ ██   ██ ██ ██   ████  ██████
-    */
+        /*
+         ██████  █████  ███    ██ ██    ██  █████  ███████     ██       █████  ██    ██ ███████ ██████  ██ ███    ██  ██████
+        ██      ██   ██ ████   ██ ██    ██ ██   ██ ██          ██      ██   ██  ██  ██  ██      ██   ██ ██ ████   ██ ██
+        ██      ███████ ██ ██  ██ ██    ██ ███████ ███████     ██      ███████   ████   █████   ██████  ██ ██ ██  ██ ██   ███
+        ██      ██   ██ ██  ██ ██  ██  ██  ██   ██      ██     ██      ██   ██    ██    ██      ██   ██ ██ ██  ██ ██ ██    ██
+         ██████ ██   ██ ██   ████   ████   ██   ██ ███████     ███████ ██   ██    ██    ███████ ██   ██ ██ ██   ████  ██████
+        */
 
     layer.add(colorRect);
     layer.add(colorRectSlide);
