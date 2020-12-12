@@ -7,3 +7,4 @@ Control your NeoPixels over a network.
 - UI-buttons for fancy lighteffects
 - manage multiple clients
 - serve current setup to clients and set the page
+- change from SPIFFS to LittleFS
