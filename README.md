@@ -1,6 +1,10 @@
 # WS2812B-ESP-Webserver
 Control your NeoPixels over a network.
 
+# Actual UI:
+
+![](readmedata/UpgradedUI.gif)
+
 # To-Do:
 
 - multithead on ESP (https://learn.adafruit.com/multi-tasking-the-arduino-part-1/ditch-the-delay)
